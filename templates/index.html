@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Autopatch Dashboard</title>
+    <style>
+        body { font-family: monospace; background-color: #1a1a1a; color: #f0f0f0; display: flex; flex-direction: column; align-items: center; }
+        #controls { margin: 20px; }
+        input { padding: 10px; width: 400px; }
+        button { padding: 10px; }
+        #log { background-color: #000; border: 1px solid #333; padding: 15px; width: 80%; height: 60vh; overflow-y: scroll; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Autopatch Live Dashboard</h1>
+    <div id="controls">
+        <input type="text" id="urlInput" placeholder="Enter URL to scan (e.g., http://127.0.0.1:5001)">
+        <button onclick="startScan()">Start Scan</button>
+    </div>
+    <pre id="log">Waiting for scan to start...</pre>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        const log = document.getElementById('log');
+
+        socket.on('connect', () => {
+            log.textContent = 'Connected to server.\n';
+        });
+
+        socket.on('log', (data) => {
+            log.textContent += data.data;
+        });
+        
+        socket.on('disconnect', () => {
+            log.textContent += '\nDisconnected from server.';
+        });
+
+        function startScan() {
+            const url = document.getElementById('urlInput').value;
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+            log.textContent = `Starting scan for: ${url}\n`;
+            socket.emit('start_scan', { url: url });
+        }
+    </script>
+</body>
+</html>

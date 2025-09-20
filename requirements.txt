@@ -1,0 +1,8 @@
+# File: requirements.txt
+crewai[tools]==0.30.11
+flask==3.0.3
+flask-socketio==5.3.6
+python-dotenv==1.0.1
+playwright==1.44.0
+chromadb==0.4.24
+embedchain==0.1.98
