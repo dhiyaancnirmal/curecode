@@ -2,6 +2,8 @@ from crewai_tools import BaseTool
 from playwright.sync_api import sync_playwright
 from typing import Type, List, Dict
 from pydantic.v1 import BaseModel, Field
+from urllib.parse import urlparse, urljoin
+
 
 # --- A shared Playwright setup function to avoid repetitive code ---
 def run_playwright(url: str, task_function):
@@ -15,6 +17,56 @@ def run_playwright(url: str, task_function):
             return result
     except Exception as e:
         return f"An error occurred during browser interaction: {e}"
+
+# Add this tool to tools/browser_tools.py
+
+class CrawlWebsiteTool(BaseTool):
+    name: str = "Crawl Website Tool"
+    description: str = "Crawls a given URL to find all internal links up to a specified limit."
+
+    def _run(self, url: str, max_pages: int = 20) -> List[str]:
+        """
+        Crawls the website starting from the given URL.
+        
+        Args:
+            url (str): The starting URL to crawl.
+            max_pages (int): The maximum number of pages to crawl. Defaults to 20.
+        """
+        def task(page):
+            # URLs to visit
+            queue = [url]
+            # URLs already visited
+            visited = set([url])
+            
+            base_domain = urlparse(url).netloc
+            
+            while queue and len(visited) < max_pages:
+                current_url = queue.pop(0)
+                print(f"[Crawler] Visiting: {current_url}")
+                
+                try:
+                    # Navigate to the page. If it fails, just skip it.
+                    page.goto(current_url, wait_until="networkidle")
+                    
+                    # Find all anchor tags
+                    a_tags = page.query_selector_all("a")
+                    
+                    for tag in a_tags:
+                        href = tag.get_attribute("href")
+                        if href:
+                            absolute_url = urljoin(current_url, href)
+                            parsed_url = urlparse(absolute_url)
+                            
+                            # Check if it's on the same domain and not visited yet
+                            if parsed_url.netloc == base_domain and absolute_url not in visited:
+                                visited.add(absolute_url)
+                                queue.append(absolute_url)
+                except Exception as e:
+                    print(f"[Crawler] Error visiting {current_url}: {e}")
+
+            return list(visited)
+            
+        return run_playwright(url, task)
 
 # --- Tool 1: Find Forms ---
 class FindFormsTool(BaseTool):

@@ -1,9 +1,7 @@
 import os
 from crewai import Agent
 from langchain_openai import ChatOpenAI
-# --- MODIFICATION START: Import the new, specific tools ---
-from tools.browser_tools import FindFormsTool, GetFormFieldsTool, SubmitFormTool
-# --- MODIFICATION END ---
+from tools.browser_tools import FindFormsTool, GetFormFieldsTool, SubmitFormTool, CrawlWebsiteTool
 
 class AutopatchAgents():
     def __init__(self):
@@ -20,6 +18,20 @@ class AutopatchAgents():
                 "HTTP-Referer": "http://localhost:5000",
                 "X-Title": "Autopatch"
             }
+        )
+
+    def crawler_agent(self):
+        return Agent(
+            role='Website Crawler',
+            goal=f'Crawl the provided website to discover all accessible internal URLs.',
+            backstory=(
+                'You are a meticulous web spider. Your mission is to navigate a website and compile a '
+                'comprehensive list of every unique internal page, creating a site map for the security team.'
+            ),
+            tools=[CrawlWebsiteTool()], # Give it the new tool
+            llm=self.llm,
+            verbose=True,
+            allow_delegation=False
         )
 
     def scout_agent(self):
