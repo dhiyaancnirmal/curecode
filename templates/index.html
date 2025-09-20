@@ -8,32 +8,64 @@
         #controls { margin: 20px; }
         input { padding: 10px; width: 400px; }
         button { padding: 10px; }
-        #log { background-color: #000; border: 1px solid #333; padding: 15px; width: 80%; height: 60vh; overflow-y: scroll; white-space: pre-wrap; }
+        .terminal { background-color: #000; border: 1px solid #333; padding: 15px; width: 80%; height: 30vh; overflow-y: scroll; white-space: pre-wrap; margin-bottom: 20px; }
+        .loading { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <h1>Autopatch Live Dashboard</h1>
     <div id="controls">
-        <input type="text" id="urlInput" placeholder="Enter URL to scan (e.g., http://127.0.0.1:5001)">
+        <input type="text" id="urlInput" placeholder="Enter URL to scan (e.g., http://quotes.toscrape.com/login)">
         <button onclick="startScan()">Start Scan</button>
     </div>
-    <pre id="log">Waiting for scan to start...</pre>
+    <h2>Scout Agent Terminal</h2>
+    <pre id="scout-log" class="terminal">Waiting for scout agent...</pre>
+    <div id="scout-loading" class="loading"></div>
+    <h2>Tester Agent Terminal</h2>
+    <pre id="tester-log" class="terminal">Waiting for tester agent...</pre>
+    <div id="tester-loading" class="loading"></div>
 
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
         const socket = io();
-        const log = document.getElementById('log');
+        const scoutLog = document.getElementById('scout-log');
+        const testerLog = document.getElementById('tester-log');
+        const scoutLoading = document.getElementById('scout-loading');
+        const testerLoading = document.getElementById('tester-loading');
 
         socket.on('connect', () => {
-            log.textContent = 'Connected to server.\n';
+            scoutLog.textContent = 'Connected to server.\n';
         });
 
         socket.on('log', (data) => {
-            log.textContent += data.data;
+            const line = data.data + '\n';
+            if (data.agent === 'scout') {
+                scoutLog.textContent += line;
+                scoutLog.scrollTop = scoutLog.scrollHeight;
+            } else if (data.agent === 'tester') {
+                testerLog.textContent += line;
+                testerLog.scrollTop = testerLog.scrollHeight;
+            } else {
+                scoutLog.textContent += line;  // Default to scout
+                scoutLog.scrollTop = scoutLog.scrollHeight;
+            }
         });
-        
-        socket.on('disconnect', () => {
-            log.textContent += '\nDisconnected from server.';
+
+        socket.on('start_loading', (data) => {
+            if (data.agent === 'scout') {
+                scoutLoading.style.display = 'inline-block';
+            } else if (data.agent === 'tester') {
+                testerLoading.style.display = 'inline-block';
+            }
+        });
+
+        socket.on('end_loading', (data) => {
+            if (data.agent === 'scout') {
+                scoutLoading.style.display = 'none';
+            } else if (data.agent === 'tester') {
+                testerLoading.style.display = 'none';
+            }
         });
 
         function startScan() {
@@ -42,7 +74,8 @@
                 alert('Please enter a URL');
                 return;
             }
-            log.textContent = `Starting scan for: ${url}\n`;
+            scoutLog.textContent = `Starting scan for: ${url}\n`;
+            testerLog.textContent = `Waiting for reconnaissance...\n`;
             socket.emit('start_scan', { url: url });
         }
     </script>

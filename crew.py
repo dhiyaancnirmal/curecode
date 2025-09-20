@@ -1,4 +1,3 @@
-# File: crew.py
 from crewai import Crew, Task, Process
 from agents import AutopatchAgents
 
@@ -9,21 +8,45 @@ class AutopatchCrew():
     def kickoff(self):
         agents = AutopatchAgents()
         scout = agents.scout_agent()
+        tester = agents.tester_agent()
+        fixer = agents.fixer_agent()
 
-        # Define the task for the scout agent
+        # --- MODIFICATION START: Updated task descriptions for new tools ---
         recon_task = Task(
-            description=f"Access the website at {self.url} and identify all the forms available on that single page. Your final answer must be a list of all the forms you found.",
-            expected_output="A comprehensive list detailing the HTML of each form found on the page.",
+            description=f"Use the Find Forms Tool to scan the website at {self.url} and identify all forms on the page.",
+            expected_output="A list of strings, each containing the HTML of a form found on the page.",
             agent=scout,
-            # The 'tools' parameter is removed from here because the agent already has its tools defined.
         )
 
+        test_task = Task(
+            description=(
+                f"For the website at {self.url}, use the forms found in the previous task to test for SQL injection. "
+                f"First, use the Get Form Fields Tool to understand the inputs. "
+                f"Then, use the Submit Form Tool with a malicious payload like `{{\"username\": \"' OR 1=1 --\", \"password\": \"test\"}}`. "
+                f"Analyze the result from the tool. If the login succeeds or the page changes significantly, it's a vulnerability."
+            ),
+            expected_output="A report listing the form tested, the payload used, and a conclusion on whether a vulnerability was found, with evidence.",
+            agent=tester,
+            context=[recon_task]
+        )
+
+        fix_task = Task(
+            description=f"Analyze the vulnerability report from the previous task. For each confirmed vulnerability, provide a code fix. "
+                        f"For SQL injection, suggest using parameterized queries and provide a Python `sqlite3` example.",
+            expected_output="A list of suggested code fixes or best practices based on the testing results.",
+            agent=fixer,
+            context=[test_task]
+        )
+        # --- MODIFICATION END ---
+
+        # --- MODIFICATION START: Correctly define the crew once with all agents and tasks ---
         crew = Crew(
-            agents=[scout],
-            tasks=[recon_task],
+            agents=[scout, tester, fixer],
+            tasks=[recon_task, test_task, fix_task],
             process=Process.sequential,
             verbose=2
         )
+        # --- MODIFICATION END ---
 
         result = crew.kickoff()
         return result

@@ -1,16 +1,17 @@
-# File: agents.py
 import os
 from crewai import Agent
 from langchain_openai import ChatOpenAI
-from tools.browser_tools import BrowserInteractionTool
-
-# --- MODIFICATION START ---
-# We are moving the tool and llm initialization inside the class
-# to make them proper attributes.
+# --- MODIFICATION START: Import the new, specific tools ---
+from tools.browser_tools import FindFormsTool, GetFormFieldsTool, SubmitFormTool
+# --- MODIFICATION END ---
 
 class AutopatchAgents():
     def __init__(self):
-        self.browser_tool = BrowserInteractionTool()
+        # --- MODIFICATION START: Instantiate all the new tools ---
+        self.find_forms_tool = FindFormsTool()
+        self.get_form_fields_tool = GetFormFieldsTool()
+        self.submit_form_tool = SubmitFormTool()
+        # --- MODIFICATION END ---
         self.llm = ChatOpenAI(
             model="x-ai/grok-4-fast:free",
             api_key=os.environ.get("OPENROUTER_API_KEY"),
@@ -25,14 +26,39 @@ class AutopatchAgents():
         return Agent(
             role='Website Reconnaissance Specialist',
             goal='Scan the provided URL to identify all web forms present on the page.',
-            backstory=(
-                'As a seasoned web crawler expert, your primary objective is to meticulously map out '
-                'the structure of a target website. You specialize in identifying interactive elements, '
-                'especially forms, which are critical entry points for security testing.'
-            ),
-            tools=[self.browser_tool],  # Use self.browser_tool
-            llm=self.llm,              # Use self.llm
+            backstory='You are an expert web crawler. Your job is to find all the forms on a page so the tester can analyze them.',
+            # --- MODIFICATION START: Give the scout only the tool it needs ---
+            tools=[self.find_forms_tool],
+            # --- MODIFICATION END ---
+            llm=self.llm,
             verbose=True,
             allow_delegation=False
         )
-# --- MODIFICATION END ---
+
+    def tester_agent(self):
+        return Agent(
+            role='Vulnerability Tester',
+            goal='Test identified forms for SQL injection vulnerabilities.',
+            backstory=(
+                'You are a penetration tester. Use the Get Form Fields Tool to see what inputs a form has. '
+                'Then, use the Submit Form Tool to send SQL injection payloads (e.g., {"username": "\' OR 1=1 --", "password": "password"}) '
+                'and analyze the result. If the submission is successful or the page changes unexpectedly, it could be vulnerable.'
+            ),
+            # --- MODIFICATION START: Give the tester only the tools it needs ---
+            tools=[self.get_form_fields_tool, self.submit_form_tool],
+            # --- MODIFICATION END ---
+            llm=self.llm,
+            verbose=True,
+            allow_delegation=False
+        )
+    
+    def fixer_agent(self):
+        return Agent(
+            role='Vulnerability Fixer',
+            goal='Analyze vulnerabilities and suggest code fixes.',
+            backstory='You are a security engineer. Suggest patches for vulns found by the tester (e.g., parameterized queries for SQLi). Provide code snippets in Python.',
+            tools=[], # The fixer doesn't need browser tools
+            llm=self.llm,
+            verbose=True,
+            allow_delegation=False
+        )
