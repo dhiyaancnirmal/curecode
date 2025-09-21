@@ -436,28 +436,32 @@
                 status: document.getElementById('crawler-status'),
                 intervalId: null, 
                 hasContent: false, 
-                hasStarted: false
+                hasStarted: false,
+                isCompleted: false
             },
             scout: { 
                 el: document.getElementById('scout-log'), 
                 status: document.getElementById('scout-status'),
                 intervalId: null, 
                 hasContent: false, 
-                hasStarted: false
+                hasStarted: false,
+                isCompleted: false
             },
             tester: { 
                 el: document.getElementById('tester-log'), 
                 status: document.getElementById('tester-status'),
                 intervalId: null, 
                 hasContent: false, 
-                hasStarted: false
+                hasStarted: false,
+                isCompleted: false
             },
             fixer: { 
                 el: document.getElementById('fixer-log'), 
                 status: document.getElementById('fixer-status'),
                 intervalId: null, 
                 hasContent: false, 
-                hasStarted: false
+                hasStarted: false,
+                isCompleted: false
             },
             general: { 
                 el: document.getElementById('general-log'), 
@@ -641,8 +645,8 @@
                 terminals.general.hasContent = true;
             }
             
-            // Only append to specific terminal if it's not the general/system log
-            if (agentKey !== 'system') {
+            // Only append to specific terminal if it's not the general/system log AND not completed
+            if (agentKey !== 'system' && !term.isCompleted) {
             term.el.textContent += line;
             }
             
@@ -656,8 +660,13 @@
             terminals.general.el.scrollTop = terminals.general.el.scrollHeight;
             
             // Check for individual agent completion
-            if (line.includes('Final Answer:') || line.includes('Task output:')) {
-                // Mark this specific agent as completed
+            if (line.includes('Final Answer:') || line.includes('Task output:') || 
+                line.includes('Agent stopped due to iteration limit') || 
+                line.includes('Agent stopped due to time limit')) {
+                
+                // Mark this specific agent as completed and STOP it from receiving more content
+                term.isCompleted = true;
+                
                 if (term.status) {
                     term.status.className = 'status-indicator completed';
                     // Turn off this agent's light after 2 seconds
@@ -674,8 +683,28 @@
                         if (terminals.general.status) {
                             terminals.general.status.className = 'status-indicator off';
                         }
-                    }, 4000); // Wait 4 seconds total (2 seconds for fixer + 2 seconds for system)
+                    }, 3000); // Wait 3 seconds total (2 seconds for fixer + 1 second for system)
                 }
+            }
+            
+            // Check for agent transitions - when a new agent starts, mark previous agents as completed
+            if (line.includes('Working Agent:')) {
+                // Turn ON system terminal light when any agent starts
+                if (terminals.general.status) {
+                    terminals.general.status.className = 'status-indicator active';
+                }
+                
+                // Mark all other agents as completed when a new one starts
+                Object.keys(terminals).forEach(key => {
+                    if (key !== agentKey && key !== 'general' && terminals[key].status) {
+                        terminals[key].status.className = 'status-indicator completed';
+                        setTimeout(() => {
+                            if (terminals[key].status) {
+                                terminals[key].status.className = 'status-indicator off';
+                            }
+                        }, 1000);
+                    }
+                });
             }
             
             // Check for overall scan completion
@@ -712,6 +741,7 @@
                 stopLoadingAnimation(term);
                 term.hasContent = false;
                 term.hasStarted = false;
+                term.isCompleted = false;
                 // Reset status indicator
                 if (term.status) {
                     term.status.className = 'status-indicator';

@@ -32,16 +32,18 @@ class AutopatchCrew():
 
         test_task = Task(
             description=(
-                f"For EACH form identified in the previous task, perform comprehensive security tests. "
+                f"For EACH form identified in the previous task, perform security tests. "
                 f"1. Test for SQL injection using the Submit Form Tool with a payload like `{{\"username\": \"' OR 1=1 --\"}}`. "
                 f"2. Test for XSS in text fields using the Test for XSS Tool. "
-                f"3. If login forms are found, test for IDOR vulnerabilities using the IDOR Test Tool with different user accounts. "
-                f"4. Check for security misconfigurations using the Security Configuration Checker on all discovered URLs. "
-                f"Compile a single report detailing the results of ALL tests including any IDOR or configuration issues found."
+                f"3. Check for security misconfigurations on all discovered URLs. "
+                f"CRITICAL: YOU MUST ONLY REPORT ON VULNERABILITIES THAT YOU HAVE PERSONALLY CONFIRMED WITH A TOOL. "
+                f"Do not guess or infer other vulnerabilities. For each confirmed finding, report the type, location, payload, and evidence. "
+                f"DO NOT provide any solutions, fixes, or code examples. DO NOT provide a 'Final Answer' section. "
+                f"When you finish testing, simply stop without providing any final summary."
             ),
-            expected_output="A comprehensive report listing every form tested, the payloads used for SQLi and XSS, IDOR test results, security configuration findings, and a conclusion on all vulnerabilities found.",
+            expected_output="A concise report listing ONLY the vulnerabilities that were successfully confirmed with a tool, including evidence for each. NO solutions or code examples.",
             agent=tester,
-            context=[recon_task]
+            context=[recon_task, crawl_task]
         )
 
         

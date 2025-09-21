@@ -87,7 +87,25 @@ def handle_start_scan(json):
                 lower_line = cleaned_line.lower()
 
                 # More precise agent detection based on agent names and tool usage
-                if any(keyword in lower_line for keyword in [
+                # First check for explicit agent role names in the log
+                if 'working agent: website crawler' in lower_line or 'working agent: crawler' in lower_line:
+                    agent = 'crawler'
+                    agent_states['crawler'] = True
+                    agent_content['crawler'] = True
+                elif 'working agent: website reconnaissance specialist' in lower_line or 'working agent: scout' in lower_line:
+                    agent = 'scout'
+                    agent_states['scout'] = True
+                    agent_content['scout'] = True
+                elif 'working agent: vulnerability tester' in lower_line or 'working agent: tester' in lower_line:
+                    agent = 'tester'
+                    agent_states['tester'] = True
+                    agent_content['tester'] = True
+                elif 'working agent: vulnerability fixer' in lower_line or 'working agent: fixer' in lower_line:
+                    agent = 'fixer'
+                    agent_states['fixer'] = True
+                    agent_content['fixer'] = True
+                # Then check for tool usage and specific patterns
+                elif any(keyword in lower_line for keyword in [
                     'website crawler', 'crawl website tool', 'crawling', 'visiting:', 
                     'urls discovered', 'site map', 'crawl completed', 'starting crawl', 'total urls',
                     'smart crawl', 'database url pattern', 'pattern limit reached', 'skipping',
@@ -118,18 +136,26 @@ def handle_start_scan(json):
                 elif any(keyword in lower_line for keyword in [
                     'vulnerability fixer', 'suggested code fixes', 'code fix', 'patch', 
                     'security fix', 'vulnerability patch', 'fix suggestion', 'code snippet',
-                    'parameterized queries', 'input validation', 'sanitization', 'final result:',
                     'recommended fixes', 'security recommendations', 'vulnerability remediation',
                     'flask import', 'from flask import', 'app = flask', 'def add_security_headers',
-                    'content-security-policy', 'x-frame-options', 'x-content-type-options'
+                    'content-security-policy', 'x-frame-options', 'x-content-type-options',
+                    'fixed code:', 'vulnerable code example', 'import sqlite3', 'import subprocess'
                 ]):
                     agent = 'fixer'
                     agent_states['fixer'] = True
                     agent_content['fixer'] = True
                 elif '--- SCAN COMPLETE ---' in cleaned_line or 'final result:' in lower_line:
                     agent = 'system'
-                elif 'final answer:' in lower_line or 'task output:' in lower_line:
-                    # Keep the current agent for completion detection
+                elif 'final answer:' in lower_line:
+                    # If tester agent is providing solutions in Final Answer, route to fixer
+                    if agent == 'tester':
+                        agent = 'fixer'
+                        agent_states['fixer'] = True
+                        agent_content['fixer'] = True
+                    # Keep the current agent for completion detection otherwise
+                    pass
+                elif 'task output:' in lower_line or 'agent stopped due to iteration limit' in lower_line or 'agent stopped due to time limit' in lower_line:
+                    # Agent has completed - keep current agent for completion detection
                     pass
                 
                 # Add timestamp to the log data

@@ -53,18 +53,22 @@ class AutopatchAgents():
     def tester_agent(self):
         return Agent(
             role='Vulnerability Tester',
-            goal='Test identified forms for SQL injection, Cross-Site Scripting (XSS), IDOR vulnerabilities, and security misconfigurations.',
+            goal='Test identified forms for SQL injection, Cross-Site Scripting (XSS), IDOR vulnerabilities, and security misconfigurations. Present findings clearly without providing solutions.',
             backstory=(
-                'You are a comprehensive penetration tester. Test for SQL injection using the Submit Form Tool, '
-                'test for XSS using the Test for XSS Tool, perform IDOR testing with the IDOR Test Tool, '
+                'You are a penetration tester who ONLY reports vulnerabilities. You NEVER provide solutions, fixes, or code examples. '
+                'Test for SQL injection using the Submit Form Tool, test for XSS using the Test for XSS Tool, perform IDOR testing with the IDOR Test Tool, '
                 'and check for security misconfigurations using the Security Configuration Checker. '
-                'Analyze the results from all tests and report any confirmed vulnerabilities.'
+                'CRITICAL: You must ONLY report what vulnerabilities you found with evidence. Do NOT provide any "Final Answer" section. '
+                'Do NOT provide code fixes, solutions, or examples. Do NOT use phrases like "Fixed code:" or "Original vulnerable code:". '
+                'When you finish testing, simply stop. Do not provide a final summary with solutions.'
             ),
             # Add all testing tools to the agent's toolbox
             tools=[self.get_form_fields_tool, self.submit_form_tool, self.xss_test_tool, self.idor_test_tool, self.security_config_tool],
             llm=self.llm,
             verbose=True,
-            allow_delegation=False
+            allow_delegation=False,
+            max_iter=5,
+            max_execution_time=180
         )
     
     def fixer_agent(self):

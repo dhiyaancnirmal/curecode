@@ -1,0 +1,1 @@
+# SecureCart Django Application

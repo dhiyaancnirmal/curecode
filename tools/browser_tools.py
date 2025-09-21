@@ -421,9 +421,6 @@ class SecurityConfigTool(BaseTool):
                 result += "ISSUES FOUND:\n"
                 for issue in issues:
                     result += f"{issue}\n"
-                result += "\nRECOMMENDATIONS:\n"
-                for rec in recommendations:
-                    result += f"• {rec}\n"
             else:
                 result += "✓ No major security misconfigurations detected"
             
