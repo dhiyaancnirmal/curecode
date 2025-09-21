@@ -27,7 +27,7 @@
         }
         
         .container {
-            max-width: 1400px;
+            max-width: 95vw;
             margin: 0 auto;
             padding: 2rem;
         }
@@ -73,7 +73,7 @@
             padding: 0.75rem 1rem;
             color: #ffffff;
             font-size: 0.9rem;
-            width: 400px;
+            width: min(400px, 30vw);
             transition: all 0.2s ease;
         }
         
@@ -118,7 +118,7 @@
             grid-template-rows: auto auto;
             gap: 1.5rem;
             margin-bottom: 3rem;
-            max-width: 1200px;
+            max-width: 90vw;
             margin-left: auto;
             margin-right: auto;
         }
@@ -130,8 +130,10 @@
             overflow: hidden;
             transition: all 0.3s ease;
             resize: both;
-            min-width: 300px;
-            min-height: 200px;
+            min-width: 20vw;
+            min-height: 25vh;
+            max-width: 100%;
+            max-height: 100%;
             position: relative;
         }
         
@@ -193,6 +195,7 @@
             background: #000000;
             padding: 1rem;
             height: calc(100% - 60px);
+            max-height: calc(100% - 60px);
             overflow-y: auto;
             font-family: 'VCR OSD Mono', monospace;
             font-size: 0.8rem;
@@ -222,10 +225,13 @@
         .system-terminal {
             grid-column: 2;
             grid-row: 1 / -1;
+            height: 60vh;
+            max-height: 60vh;
         }
         
         .agent-terminal {
-            /* Default size will be set by grid */
+            height: 30vh;
+            max-height: 30vh;
         }
         
         .footer {
@@ -258,6 +264,90 @@
         .status-indicator.completed {
             background: #ffffff;
         }
+        
+        .status-indicator.off {
+            background: #333333;
+            box-shadow: none;
+        }
+        
+        .copy-button {
+            background: #333333;
+            border: 1px solid #555555;
+            border-radius: 4px;
+            color: #ffffff;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-left: 0.5rem;
+        }
+        
+        .copy-button:hover {
+            background: #555555;
+            border-color: #777777;
+        }
+        
+        .copy-button.copied {
+            background: #00ff88;
+            border-color: #00ff88;
+            color: #000000;
+        }
+        
+        /* Responsive breakpoints */
+        @media (max-width: 1200px) {
+            .terminals-grid {
+                max-width: 95vw;
+                gap: 1rem;
+            }
+            
+            .terminal-card {
+                min-width: 25vw;
+                min-height: 20vh;
+            }
+            
+            .system-terminal {
+                height: 50vh;
+                max-height: 50vh;
+            }
+            
+            .agent-terminal {
+                height: 25vh;
+                max-height: 25vh;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .terminals-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto auto;
+                gap: 1rem;
+            }
+            
+            .system-terminal {
+                grid-column: 1;
+                grid-row: 3;
+                height: 30vh;
+                max-height: 30vh;
+            }
+            
+            .terminal-card {
+                min-width: 90vw;
+                min-height: 15vh;
+            }
+            
+            .agent-terminal {
+                height: 20vh;
+                max-height: 20vh;
+            }
+            
+            .url-input {
+                width: 80vw;
+            }
+        }
     </style>
 </head>
 <body>
@@ -278,6 +368,7 @@
                 <div class="terminal-header">
                     <span class="terminal-icon">🗺️</span>
                     <span class="terminal-title">Crawler Agent</span>
+                    <button class="copy-button" onclick="copyTerminalContent('crawler-log')">Copy</button>
                     <div class="status-indicator" id="crawler-status"></div>
                 </div>
                 <pre id="crawler-log" class="terminal-content">Waiting for scan...</pre>
@@ -288,6 +379,7 @@
                 <div class="terminal-header">
                     <span class="terminal-icon">📋</span>
                     <span class="terminal-title">System</span>
+                    <button class="copy-button" onclick="copyTerminalContent('general-log')">Copy</button>
                     <div class="status-indicator" id="general-status"></div>
                 </div>
                 <pre id="general-log" class="terminal-content">Waiting for scan...</pre>
@@ -298,6 +390,7 @@
                 <div class="terminal-header">
                     <span class="terminal-icon">🕵️</span>
                     <span class="terminal-title">Scout Agent</span>
+                    <button class="copy-button" onclick="copyTerminalContent('scout-log')">Copy</button>
                     <div class="status-indicator" id="scout-status"></div>
                 </div>
                 <pre id="scout-log" class="terminal-content">Waiting for scan...</pre>
@@ -308,6 +401,7 @@
                 <div class="terminal-header">
                     <span class="terminal-icon">🎯</span>
                     <span class="terminal-title">Tester Agent</span>
+                    <button class="copy-button" onclick="copyTerminalContent('tester-log')">Copy</button>
                     <div class="status-indicator" id="tester-status"></div>
                 </div>
                 <pre id="tester-log" class="terminal-content">Waiting for scan...</pre>
@@ -318,6 +412,7 @@
                 <div class="terminal-header">
                     <span class="terminal-icon">🛡️</span>
                     <span class="terminal-title">Fixer Agent</span>
+                    <button class="copy-button" onclick="copyTerminalContent('fixer-log')">Copy</button>
                     <div class="status-indicator" id="fixer-status"></div>
                 </div>
                 <pre id="fixer-log" class="terminal-content">Waiting for scan...</pre>
@@ -470,6 +565,45 @@
         // Initialize resize handling when page loads
         document.addEventListener('DOMContentLoaded', setupTerminalResize);
 
+        // Copy terminal content function
+        function copyTerminalContent(terminalId) {
+            const terminal = document.getElementById(terminalId);
+            const text = terminal.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                // Show copied feedback
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // Show feedback
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
         socket.on('thinking', (data) => {
             const agentKey = data.agent;
             const term = terminals[agentKey];
@@ -521,14 +655,48 @@
             }
             terminals.general.el.scrollTop = terminals.general.el.scrollHeight;
             
+            // Check for individual agent completion
+            if (line.includes('Final Answer:') || line.includes('Task output:')) {
+                // Mark this specific agent as completed
+                if (term.status) {
+                    term.status.className = 'status-indicator completed';
+                    // Turn off this agent's light after 2 seconds
+                    setTimeout(() => {
+                        if (term.status) {
+                            term.status.className = 'status-indicator off';
+                        }
+                    }, 2000);
+                }
+                
+                // Special handling for system terminal - turn off when fixer agent finishes
+                if (agentKey === 'fixer') {
+                    setTimeout(() => {
+                        if (terminals.general.status) {
+                            terminals.general.status.className = 'status-indicator off';
+                        }
+                    }, 2000);
+                }
+            }
+            
+            // Check for overall scan completion
             if (line.includes('--- SCAN COMPLETE ---')) {
                 Object.values(terminals).forEach(stopLoadingAnimation);
-                // Mark all started agents as completed
+                
+                // Mark all started agents as completed (except system terminal)
                 Object.values(terminals).forEach(term => {
-                    if (term.hasStarted && term.status) {
+                    if (term.hasStarted && term.status && term !== terminals.general) {
                         term.status.className = 'status-indicator completed';
                     }
                 });
+                
+                // Turn off all lights after 3 seconds (except system terminal)
+                setTimeout(() => {
+                    Object.values(terminals).forEach(term => {
+                        if (term.status && term !== terminals.general) {
+                            term.status.className = 'status-indicator off';
+                        }
+                    });
+                }, 3000);
             }
         });
 

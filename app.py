@@ -109,7 +109,8 @@ def handle_start_scan(json):
                     'sql injection', 'xss test', 'penetration test', 'security test', 'vulnerability test',
                     'form fields', 'payload', 'injection', 'xss vulnerability', 'sql vulnerability',
                     'idor test', 'idor vulnerability', 'security config', 'security configuration',
-                    'security headers', 'missing header', 'server header', 'content-security-policy'
+                    'security headers', 'missing header', 'server header', 'content-security-policy',
+                    'testing form', 'form test', 'vulnerability found', 'test result', 'test completed'
                 ]):
                     agent = 'tester'
                     agent_states['tester'] = True
@@ -117,13 +118,19 @@ def handle_start_scan(json):
                 elif any(keyword in lower_line for keyword in [
                     'vulnerability fixer', 'suggested code fixes', 'code fix', 'patch', 
                     'security fix', 'vulnerability patch', 'fix suggestion', 'code snippet',
-                    'parameterized queries', 'input validation', 'sanitization'
+                    'parameterized queries', 'input validation', 'sanitization', 'final result:',
+                    'recommended fixes', 'security recommendations', 'vulnerability remediation',
+                    'flask import', 'from flask import', 'app = flask', 'def add_security_headers',
+                    'content-security-policy', 'x-frame-options', 'x-content-type-options'
                 ]):
                     agent = 'fixer'
                     agent_states['fixer'] = True
                     agent_content['fixer'] = True
                 elif '--- SCAN COMPLETE ---' in cleaned_line or 'final result:' in lower_line:
                     agent = 'system'
+                elif 'final answer:' in lower_line or 'task output:' in lower_line:
+                    # Keep the current agent for completion detection
+                    pass
                 
                 # Add timestamp to the log data
                 timestamp = datetime.now().strftime("%H:%M:%S")
