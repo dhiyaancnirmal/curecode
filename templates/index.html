@@ -111,6 +111,18 @@
             background: #111111;
             border-color: #555555;
         }
+
+        .btn-report {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+            border: 2px solid #ff6b35;
+        }
+
+        .btn-report:hover {
+            background: linear-gradient(45deg, #e55a2b, #e8841a);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.4);
+        }
         
         .terminals-grid {
             display: grid;
@@ -666,6 +678,7 @@
             <input type="text" id="urlInput" class="url-input" placeholder="Enter URL to scan (e.g., https://quotes.toscrape.com)">
             <button onclick="startScan()" class="btn">Start Scan</button>
             <button id="headlessToggle" onclick="toggleHeadless()" class="btn btn-secondary">Browser: Headless</button>
+            <button onclick="showFinalReport()" class="btn btn-report" id="viewReportBtn" style="display: none;">📊 View Report</button>
         </div>
 
         <div class="terminals-grid">
@@ -1064,6 +1077,9 @@
             startLoadingAnimation(terminals.tester);
             startLoadingAnimation(terminals.fixer);
 
+            // Hide the View Report button when starting a new scan
+            document.getElementById('viewReportBtn').style.display = 'none';
+
             socket.emit('start_scan', { url: url });
         }
 
@@ -1092,6 +1108,8 @@
         socket.on('final_report', (data) => {
             finalReportData = data;
             showFinalReport();
+            // Show the View Report button
+            document.getElementById('viewReportBtn').style.display = 'inline-block';
         });
 
         function showFinalReport() {
@@ -1181,12 +1199,13 @@
             `;
         }
 
-        // Auto-show report when scan completes
+        // Show report button when scan completes
         socket.on('log', (data) => {
             if (data.agent === 'fixer' && data.data.includes('Final Result:')) {
+                // Just show the button, don't auto-open the report
                 setTimeout(() => {
-                    showFinalReport();
-                }, 2000);
+                    document.getElementById('viewReportBtn').style.display = 'inline-block';
+                }, 1000);
             }
         });
     </script>
