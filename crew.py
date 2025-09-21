@@ -1,14 +1,14 @@
 from crewai import Crew, Task, Process
-from agents import AutopatchAgents
+from agents import CureCodeAgents
 
-class AutopatchCrew():
+class CureCodeCrew():
     def __init__(self, url):
         self.url = url
 
     # Replace the kickoff method in crew.py with this updated version
 
     def kickoff(self):
-        agents = AutopatchAgents()
+        agents = CureCodeAgents()
         # --- MODIFICATION START: Add the new crawler agent ---
         crawler = agents.crawler_agent()
         scout = agents.scout_agent()
@@ -50,11 +50,11 @@ class AutopatchCrew():
 
         fix_task = Task(
             description=(
-                "Based on the vulnerability report from the previous task, provide a concise list of code fixes. "
+                "Based only on the confirmed vulnerabilities reported by the previous task, provide a concise list of code fixes. For each fix, you must first state the vulnerability type and location exactly as it was reported, and then provide an actionable code snippet for the fix. Do NOT provide fixes for any vulnerabilities that were not explicitly confirmed in the previous report. "
                 "For each confirmed vulnerability, provide an actionable code snippet showing the fix. "
                 "Do NOT repeat the analysis or description of the vulnerability itself. Focus only on the solution."
             ),
-            expected_output="A list of suggested code fixes with Python code snippets for each vulnerability.",
+            expected_output="A list of suggested code fixes with code snippets in the appropriate language for each vulnerability.",
             agent=fixer,
             context=[test_task]
         )

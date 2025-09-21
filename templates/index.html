@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Autopatch</title>
+    <title>CureCode</title>
     <style>
         @font-face {
             font-family: 'VCR OSD Mono';
@@ -348,12 +348,317 @@
                 width: 80vw;
             }
         }
+
+        /* Final Report Modal Styles */
+        .report-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            font-family: 'VCR OSD Mono', monospace;
+        }
+
+        .report-container {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 1200px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .report-header {
+            background: linear-gradient(90deg, #00ff00, #00cc00);
+            color: #000;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .report-header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #000;
+            font-size: 30px;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+
+        .close-btn:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .report-content {
+            padding: 30px;
+            color: #00ff00;
+        }
+
+        .report-section {
+            margin-bottom: 40px;
+        }
+
+        .report-section h3 {
+            color: #00ff00;
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #00ff00;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-item {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.3);
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 36px;
+            font-weight: bold;
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .report-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .report-item {
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .report-item:hover {
+            background: rgba(0, 255, 0, 0.1);
+            transform: translateX(5px);
+        }
+
+        .report-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .vulnerability-type, .fix-type {
+            font-size: 16px;
+            font-weight: bold;
+            color: #00ff00;
+            text-transform: uppercase;
+        }
+
+        .severity-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .severity-badge.critical {
+            background-color: #ff4444;
+            color: white;
+        }
+
+        .severity-badge.high {
+            background-color: #ff8800;
+            color: white;
+        }
+
+        .severity-badge.medium {
+            background-color: #ffaa00;
+            color: black;
+        }
+
+        .severity-badge.low {
+            background-color: #00aa00;
+            color: white;
+        }
+
+        .language-badge {
+            background-color: #0066cc;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .report-item-content p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .report-item-content strong {
+            color: #00ff00;
+        }
+
+        .report-item-content code {
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'VCR OSD Mono', monospace;
+            color: #ffaa00;
+        }
+
+        .code-block {
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            color: #00ff00;
+            background: none;
+            padding: 0;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #00aa00;
+            font-size: 18px;
+            background: rgba(0, 170, 0, 0.1);
+            border: 2px dashed #00aa00;
+            border-radius: 8px;
+        }
+
+        .report-footer {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .report-footer .btn {
+            padding: 12px 24px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'VCR OSD Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .report-footer .btn-primary {
+            background: linear-gradient(45deg, #00ff00, #00cc00);
+            color: #000;
+        }
+
+        .report-footer .btn-primary:hover {
+            background: linear-gradient(45deg, #00cc00, #00aa00);
+            transform: translateY(-2px);
+        }
+
+        .report-footer .btn-secondary {
+            background: transparent;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+        }
+
+        .report-footer .btn-secondary:hover {
+            background: rgba(0, 255, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Print styles */
+        @media print {
+            .report-modal {
+                position: static;
+                background: none;
+                display: block !important;
+            }
+            
+            .report-container {
+                box-shadow: none;
+                border: 2px solid #000;
+                width: 100%;
+                max-width: none;
+                max-height: none;
+            }
+            
+            .close-btn, .report-footer {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1 class="logo">Autopatch</h1>
+            <h1 class="logo">CureCode</h1>
             <p class="subtitle">Automated Security Vulnerability Scanner</p>
         </div>
 
@@ -661,8 +966,7 @@
             
             // Check for individual agent completion
             if (line.includes('Final Answer:') || line.includes('Task output:') || 
-                line.includes('Agent stopped due to iteration limit') || 
-                line.includes('Agent stopped due to time limit')) {
+                line.includes('Agent stopped due to iteration limit')) {
                 
                 // Mark this specific agent as completed and STOP it from receiving more content
                 term.isCompleted = true;
@@ -771,12 +1075,161 @@
             const button = document.getElementById('headlessToggle');
             if (data.headless) {
                 button.textContent = 'Browser: Headless';
-                button.style.backgroundColor = '#4CAF50';
             } else {
                 button.textContent = 'Browser: Visible';
-                button.style.backgroundColor = '#f44336';
+            }
+            // Keep button styling consistent (black/secondary)
+            button.style.backgroundColor = '';
+        });
+
+        // Final Report Section
+        let finalReportData = {
+            vulnerabilities: [],
+            fixes: [],
+            summary: {}
+        };
+
+        socket.on('final_report', (data) => {
+            finalReportData = data;
+            showFinalReport();
+        });
+
+        function showFinalReport() {
+            const reportModal = document.getElementById('finalReportModal');
+            if (reportModal) {
+                reportModal.style.display = 'flex';
+                populateReportContent();
+            }
+        }
+
+        function hideFinalReport() {
+            const reportModal = document.getElementById('finalReportModal');
+            if (reportModal) {
+                reportModal.style.display = 'none';
+            }
+        }
+
+        function populateReportContent() {
+            const vulnerabilitiesList = document.getElementById('vulnerabilitiesList');
+            const fixesList = document.getElementById('fixesList');
+            const summaryStats = document.getElementById('summaryStats');
+
+            // Populate vulnerabilities
+            vulnerabilitiesList.innerHTML = '';
+            if (finalReportData.vulnerabilities && finalReportData.vulnerabilities.length > 0) {
+                finalReportData.vulnerabilities.forEach((vuln, index) => {
+                    const vulnItem = document.createElement('div');
+                    vulnItem.className = 'report-item vulnerability-item';
+                    vulnItem.innerHTML = `
+                        <div class="report-item-header">
+                            <span class="vulnerability-type">${vuln.type || 'Unknown'}</span>
+                            <span class="severity-badge ${vuln.severity || 'medium'}">${vuln.severity || 'Medium'}</span>
+                        </div>
+                        <div class="report-item-content">
+                            <p><strong>Location:</strong> ${vuln.location || 'N/A'}</p>
+                            <p><strong>Description:</strong> ${vuln.description || 'No description available'}</p>
+                            ${vuln.evidence ? `<p><strong>Evidence:</strong> <code>${vuln.evidence}</code></p>` : ''}
+                        </div>
+                    `;
+                    vulnerabilitiesList.appendChild(vulnItem);
+                });
+            } else {
+                vulnerabilitiesList.innerHTML = '<div class="no-results">🎉 No vulnerabilities found! The application appears to be secure.</div>';
+            }
+
+            // Populate fixes
+            fixesList.innerHTML = '';
+            if (finalReportData.fixes && finalReportData.fixes.length > 0) {
+                finalReportData.fixes.forEach((fix, index) => {
+                    const fixItem = document.createElement('div');
+                    fixItem.className = 'report-item fix-item';
+                    fixItem.innerHTML = `
+                        <div class="report-item-header">
+                            <span class="fix-type">${fix.type || 'Security Fix'}</span>
+                            <span class="language-badge">${fix.language || 'Code'}</span>
+                        </div>
+                        <div class="report-item-content">
+                            <p><strong>Vulnerability:</strong> ${fix.vulnerability || 'N/A'}</p>
+                            <p><strong>Solution:</strong></p>
+                            <pre class="code-block"><code>${fix.code || 'No code provided'}</code></pre>
+                        </div>
+                    `;
+                    fixesList.appendChild(fixItem);
+                });
+            } else {
+                fixesList.innerHTML = '<div class="no-results">No fixes needed - no vulnerabilities found!</div>';
+            }
+
+            // Populate summary
+            summaryStats.innerHTML = `
+                <div class="stat-item">
+                    <span class="stat-number">${finalReportData.vulnerabilities ? finalReportData.vulnerabilities.length : 0}</span>
+                    <span class="stat-label">Vulnerabilities Found</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">${finalReportData.fixes ? finalReportData.fixes.length : 0}</span>
+                    <span class="stat-label">Fixes Provided</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">${finalReportData.summary?.pagesScanned || 0}</span>
+                    <span class="stat-label">Pages Scanned</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">${finalReportData.summary?.formsTested || 0}</span>
+                    <span class="stat-label">Forms Tested</span>
+                </div>
+            `;
+        }
+
+        // Auto-show report when scan completes
+        socket.on('log', (data) => {
+            if (data.agent === 'fixer' && data.data.includes('Final Result:')) {
+                setTimeout(() => {
+                    showFinalReport();
+                }, 2000);
             }
         });
     </script>
+
+    <!-- Final Report Modal -->
+    <div id="finalReportModal" class="report-modal">
+        <div class="report-container">
+            <div class="report-header">
+                <h2>🔒 CureCode Security Report</h2>
+                <button class="close-btn" onclick="hideFinalReport()">×</button>
+            </div>
+            
+            <div class="report-content">
+                <!-- Summary Section -->
+                <div class="report-section">
+                    <h3>📊 Scan Summary</h3>
+                    <div class="summary-stats" id="summaryStats">
+                        <!-- Stats will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Vulnerabilities Section -->
+                <div class="report-section">
+                    <h3>🚨 Vulnerabilities Found</h3>
+                    <div class="report-list" id="vulnerabilitiesList">
+                        <!-- Vulnerabilities will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Fixes Section -->
+                <div class="report-section">
+                    <h3>🛠️ Recommended Fixes</h3>
+                    <div class="report-list" id="fixesList">
+                        <!-- Fixes will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="report-footer">
+                <button class="btn btn-primary" onclick="window.print()">📄 Print Report</button>
+                <button class="btn btn-secondary" onclick="hideFinalReport()">Close</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

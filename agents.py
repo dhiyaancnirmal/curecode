@@ -3,7 +3,7 @@ from crewai import Agent
 from langchain_openai import ChatOpenAI
 from tools.browser_tools import FindFormsTool, GetFormFieldsTool, SubmitFormTool, CrawlWebsiteTool, TestXSS_Tool, IDORTestTool, SecurityConfigTool
 
-class AutopatchAgents():
+class CureCodeAgents():
     def __init__(self):
         # --- MODIFICATION START: Instantiate all the new tools ---
         self.find_forms_tool = FindFormsTool()
@@ -19,7 +19,7 @@ class AutopatchAgents():
             base_url="https://openrouter.ai/api/v1",
             default_headers={
                 "HTTP-Referer": "http://localhost:5000",
-                "X-Title": "Autopatch"
+                "X-Title": "CureCode"
             }
         )
 
@@ -34,7 +34,9 @@ class AutopatchAgents():
             tools=[CrawlWebsiteTool()], # Give it the new tool
             llm=self.llm,
             verbose=True,
-            allow_delegation=False
+            allow_delegation=False,
+            max_iter=100,
+            max_execution_time=1800
         )
 
     def scout_agent(self):
@@ -47,7 +49,9 @@ class AutopatchAgents():
             # --- MODIFICATION END ---
             llm=self.llm,
             verbose=True,
-            allow_delegation=False
+            allow_delegation=False,
+            max_iter=60,
+            max_execution_time=1200
         )
 
     def tester_agent(self):
@@ -61,23 +65,26 @@ class AutopatchAgents():
                 'CRITICAL: You must ONLY report what vulnerabilities you found with evidence. Do NOT provide any "Final Answer" section. '
                 'Do NOT provide code fixes, solutions, or examples. Do NOT use phrases like "Fixed code:" or "Original vulnerable code:". '
                 'When you finish testing, simply stop. Do not provide a final summary with solutions.'
+                'Mention the code language in the report.'
             ),
             # Add all testing tools to the agent's toolbox
             tools=[self.get_form_fields_tool, self.submit_form_tool, self.xss_test_tool, self.idor_test_tool, self.security_config_tool],
             llm=self.llm,
             verbose=True,
             allow_delegation=False,
-            max_iter=5,
-            max_execution_time=180
+            max_iter=200,
+            max_execution_time=3600
         )
     
     def fixer_agent(self):
         return Agent(
             role='Vulnerability Fixer',
             goal='Analyze vulnerabilities and suggest code fixes.',
-            backstory='You are a security engineer. Suggest patches for vulns found by the tester (e.g., parameterized queries for SQLi). Provide code snippets in Python.',
+            backstory='You are a security engineer. Suggest patches for vulns found by the tester (e.g., parameterized queries for SQLi). Provide code snippets in the appropriate language..',
             tools=[], # The fixer doesn't need browser tools
             llm=self.llm,
             verbose=True,
-            allow_delegation=False
+            allow_delegation=False,
+            max_iter=40,
+            max_execution_time=600
         )

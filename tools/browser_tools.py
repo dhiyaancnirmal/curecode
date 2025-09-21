@@ -5,6 +5,8 @@ from pydantic.v1 import BaseModel, Field
 from urllib.parse import urlparse, urljoin
 import re
 from collections import defaultdict
+import json
+import threading
 
 # Global headless mode control
 HEADLESS_MODE = True
@@ -19,17 +21,102 @@ def get_headless_mode():
     """Get the current headless mode setting"""
     return HEADLESS_MODE
 
-# --- A shared Playwright setup function to avoid repetitive code ---
-def run_playwright(url: str, task_function):
+# --- Global Browser Manager for single instance ---
+class BrowserManager:
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(BrowserManager, cls).__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+    
+    def __init__(self):
+        if not self._initialized:
+            self.playwright = None
+            self.browser = None
+            self.context = None
+            self._initialized = True
+    
+    def get_browser(self):
+        """Get or create browser instance"""
+        if self.browser is None:
+            try:
+                self.playwright = sync_playwright().start()
+                self.browser = self.playwright.chromium.launch(headless=HEADLESS_MODE, slow_mo=500)
+                self.context = self.browser.new_context()
+                print("[BrowserManager] Created new browser instance")
+            except Exception as e:
+                print(f"[BrowserManager] Error creating browser: {e}")
+                return None
+        return self.browser
+    
+    def get_page(self):
+        """Get a new page from the browser context"""
+        if self.context is None:
+            self.get_browser()
+        if self.context:
+            return self.context.new_page()
+        return None
+    
+    def close(self):
+        """Close browser and cleanup"""
+        try:
+            if self.context:
+                self.context.close()
+                self.context = None
+            if self.browser:
+                self.browser.close()
+                self.browser = None
+            if self.playwright:
+                self.playwright.stop()
+                self.playwright = None
+            print("[BrowserManager] Browser instance closed")
+        except Exception as e:
+            print(f"[BrowserManager] Error closing browser: {e}")
+
+# Global browser manager instance
+browser_manager = BrowserManager()
+
+# --- Updated shared Playwright function to use single browser instance ---
+def run_playwright(url: str, task_function, auth_state_path: str = None):
     try:
-        with sync_playwright() as p:
-            # Use global headless mode setting
-            browser = p.chromium.launch(headless=HEADLESS_MODE, slow_mo=100)
-            page = browser.new_page()
-            # Pass the page object to the task function
-            result = task_function(page, url)
-            browser.close()
-            return result
+        # Get browser instance
+        browser = browser_manager.get_browser()
+        if not browser:
+            return f"An error occurred: Could not create browser instance"
+        
+        # Get a new page
+        page = browser_manager.get_page()
+        if not page:
+            return f"An error occurred: Could not create page"
+        
+        # Add a small delay for smoother page loading
+        page.wait_for_timeout(200)
+        
+        # Set up authentication if provided
+        if auth_state_path:
+            try:
+                with open(auth_state_path, 'r') as f:
+                    storage_state = json.load(f)
+                # Create new context with auth state
+                auth_context = browser.new_context(storage_state=storage_state)
+                page = auth_context.new_page()
+            except Exception as e:
+                print(f"[BrowserManager] Warning: Could not load auth state: {e}")
+        
+        # Set default timeout
+        page.set_default_timeout(30000)
+        
+        # Pass the page object to the task function
+        result = task_function(page, url)
+        
+        # Close the page but keep browser open
+        page.close()
+        return result
     except Exception as e:
         return f"An error occurred during browser interaction: {e}"
 
@@ -114,8 +201,8 @@ class CrawlWebsiteTool(BaseTool):
                 print(f"[Crawler] Visiting: {current_url}")
                 
                 try:
-                    page.goto(current_url, wait_until="domcontentloaded", timeout=10000)
-                    page.set_default_timeout(10000)
+                    page.goto(current_url, wait_until="domcontentloaded")
+                    page.set_default_timeout(30000)
                     
                     a_tags = page.query_selector_all("a")
                     new_links_found = 0
@@ -236,7 +323,7 @@ class SubmitFormTool(BaseTool):
                     print(f"Could not fill field {field}: {e}")
             
             page.click('form [type="submit"]')
-            page.wait_for_timeout(2000)
+            page.wait_for_timeout(1000)
             
             new_url = page.url
             snippet = page.content()[:500]
@@ -266,12 +353,12 @@ class TestXSS_Tool(BaseTool):
                 page.remove_listener('dialog', handle_dialog)
                 return "No form found to test for XSS."
 
-            xss_payload = "<script>alert('autopatch-xss-test')</script>"
+            xss_payload = "<script>alert('curecode-xss-test')</script>"
             try:
                 # --- FIX: Use page.fill which is more reliable than form.fill ---
                 page.fill(f'[name="{payload_field}"]', xss_payload)
                 page.click('form [type="submit"]')
-                page.wait_for_timeout(2000)
+                page.wait_for_timeout(1000)
             except Exception as e:
                 page.remove_listener('dialog', handle_dialog)
                 return f"Error submitting form for XSS test: {e}"
@@ -304,7 +391,7 @@ class IDORTestTool(BaseTool):
             try:
                 # Step 1: Login as User A
                 print(f"[IDOR Test] Step 1: Logging in as User A ({user_a_credentials.get('username', 'user_a')})")
-                page.goto(login_url, wait_until="domcontentloaded", timeout=10000)
+                page.goto(login_url, wait_until="domcontentloaded")
                 
                 # Fill login form
                 username_field = page.locator('input[name="username"], input[name="email"], input[type="email"]').first
@@ -314,26 +401,26 @@ class IDORTestTool(BaseTool):
                     username_field.fill(user_a_credentials.get('username', ''))
                     password_field.fill(user_a_credentials.get('password', ''))
                     page.click('button[type="submit"], input[type="submit"], button:has-text("Login"), button:has-text("Sign In")')
-                    page.wait_for_timeout(2000)
+                    page.wait_for_timeout(1000)
                     results.append("✓ Successfully logged in as User A")
                 else:
                     return "❌ Could not find login form fields"
                 
                 # Step 2: Visit private page as User A
                 print(f"[IDOR Test] Step 2: Visiting private URL as User A: {private_url}")
-                page.goto(private_url, wait_until="domcontentloaded", timeout=10000)
+                page.goto(private_url, wait_until="domcontentloaded")
                 user_a_content = page.content()[:1000]  # Get first 1000 chars
                 results.append(f"✓ User A can access {private_url}")
                 
                 # Step 3: Logout
                 print(f"[IDOR Test] Step 3: Logging out")
-                page.goto(logout_url, wait_until="domcontentloaded", timeout=10000)
+                page.goto(logout_url, wait_until="domcontentloaded")
                 page.wait_for_timeout(1000)
                 results.append("✓ Successfully logged out")
                 
                 # Step 4: Login as User B
                 print(f"[IDOR Test] Step 4: Logging in as User B ({user_b_credentials.get('username', 'user_b')})")
-                page.goto(login_url, wait_until="domcontentloaded", timeout=10000)
+                page.goto(login_url, wait_until="domcontentloaded")
                 
                 username_field = page.locator('input[name="username"], input[name="email"], input[type="email"]').first
                 password_field = page.locator('input[name="password"], input[type="password"]').first
@@ -342,14 +429,14 @@ class IDORTestTool(BaseTool):
                     username_field.fill(user_b_credentials.get('username', ''))
                     password_field.fill(user_b_credentials.get('password', ''))
                     page.click('button[type="submit"], input[type="submit"], button:has-text("Login"), button:has-text("Sign In")')
-                    page.wait_for_timeout(2000)
+                    page.wait_for_timeout(1000)
                     results.append("✓ Successfully logged in as User B")
                 else:
                     return "❌ Could not find login form fields for User B"
                 
                 # Step 5: Attempt to access private page as User B
                 print(f"[IDOR Test] Step 5: Attempting to access {private_url} as User B")
-                page.goto(private_url, wait_until="domcontentloaded", timeout=10000)
+                page.goto(private_url, wait_until="domcontentloaded")
                 user_b_content = page.content()[:1000]  # Get first 1000 chars
                 
                 # Check if User B can see the same content as User A
@@ -377,7 +464,7 @@ class SecurityConfigTool(BaseTool):
         
         try:
             print(f"[Security Config] Checking security headers for: {url}")
-            response = requests.get(url, timeout=10, allow_redirects=True)
+            response = requests.get(url, timeout=30, allow_redirects=True)
             headers = response.headers
             
             issues = []
@@ -428,3 +515,16 @@ class SecurityConfigTool(BaseTool):
             
         except Exception as e:
             return f"❌ Security configuration check failed: {str(e)}"
+
+# --- Cleanup function to close browser when application shuts down ---
+def cleanup_browser():
+    """Close the global browser instance"""
+    browser_manager.close()
+
+# --- Function to get browser status ---
+def get_browser_status():
+    """Get the current status of the browser manager"""
+    if browser_manager.browser is None:
+        return "Browser not initialized"
+    else:
+        return "Browser is running"
