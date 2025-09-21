@@ -1,5 +1,4 @@
 -- Bloggit Database Schema
--- WARNING: This schema is intentionally vulnerable for security testing
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,

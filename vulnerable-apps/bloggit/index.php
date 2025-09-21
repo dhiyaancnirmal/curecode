@@ -50,7 +50,7 @@ if ($_POST && isset($_POST['comment']) && isset($_POST['post_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bloggit - Vulnerable Blog</title>
+    <title>Bloggit - Modern Blog Platform</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
         .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -74,7 +74,7 @@ if ($_POST && isset($_POST['comment']) && isset($_POST['post_id'])) {
     <div class="container">
         <div class="header">
             <h1>Bloggit</h1>
-            <p>A Vulnerable Blog Application for Security Testing</p>
+            <p>A Modern Blog Platform for Sharing Ideas</p>
         </div>
         
         <div class="login-link">

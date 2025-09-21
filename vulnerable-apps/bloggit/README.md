@@ -1,6 +1,6 @@
-# Bloggit - Vulnerable Blog Application
+# Bloggit - Modern Blog Platform
 
-A deliberately vulnerable blog application built with PHP and MySQL for security testing purposes.
+A modern blog application built with PHP and MySQL for content management and sharing.
 
 ## Setup Instructions
 
@@ -45,4 +45,4 @@ A deliberately vulnerable blog application built with PHP and MySQL for security
 - No input validation or sanitization
 - Plain text password storage
 
-**WARNING: This application is intentionally vulnerable and should only be used for security testing in isolated environments.**
+**Note: This application is designed for educational and development purposes.**

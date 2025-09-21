@@ -13,16 +13,18 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="App">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
           <Navbar />
-          <Routes>
+          <main className="container mx-auto px-4 py-8">
+            <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
             <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          </Routes>
+            </Routes>
+          </main>
         </div>
       </Router>
     </AuthProvider>

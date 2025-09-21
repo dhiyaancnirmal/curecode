@@ -81,7 +81,7 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in']) {
                 <ul>
                     <li>View all posts and comments</li>
                     <li>Access admin functionality</li>
-                    <li>Test security vulnerabilities</li>
+                    <li>Manage blog content</li>
                 </ul>
             </div>
             
@@ -98,7 +98,7 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in']) {
             <?php endif; ?>
             
             <div class="info">
-                <h4>Test Credentials:</h4>
+                <h4>Demo Credentials:</h4>
                 <p><strong>Username:</strong> admin<br>
                 <strong>Password:</strong> password123</p>
                 <p><em>Or try SQL injection: <code>' OR '1'='1</code></em></p>

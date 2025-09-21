@@ -38,3 +38,4 @@ logs/
 *.otf
 *.woff
 *.woff2
+node_modules/
