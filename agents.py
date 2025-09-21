@@ -1,7 +1,7 @@
 import os
 from crewai import Agent
 from langchain_openai import ChatOpenAI
-from tools.browser_tools import FindFormsTool, GetFormFieldsTool, SubmitFormTool, CrawlWebsiteTool
+from tools.browser_tools import FindFormsTool, GetFormFieldsTool, SubmitFormTool, CrawlWebsiteTool, TestXSS_Tool, IDORTestTool, SecurityConfigTool
 
 class AutopatchAgents():
     def __init__(self):
@@ -9,6 +9,9 @@ class AutopatchAgents():
         self.find_forms_tool = FindFormsTool()
         self.get_form_fields_tool = GetFormFieldsTool()
         self.submit_form_tool = SubmitFormTool()
+        self.xss_test_tool = TestXSS_Tool()
+        self.idor_test_tool = IDORTestTool()
+        self.security_config_tool = SecurityConfigTool()
         # --- MODIFICATION END ---
         self.llm = ChatOpenAI(
             model="x-ai/grok-4-fast:free",
@@ -50,15 +53,15 @@ class AutopatchAgents():
     def tester_agent(self):
         return Agent(
             role='Vulnerability Tester',
-            goal='Test identified forms for SQL injection vulnerabilities.',
+            goal='Test identified forms for SQL injection, Cross-Site Scripting (XSS), IDOR vulnerabilities, and security misconfigurations.',
             backstory=(
-                'You are a penetration tester. Use the Get Form Fields Tool to see what inputs a form has. '
-                'Then, use the Submit Form Tool to send SQL injection payloads (e.g., {"username": "\' OR 1=1 --", "password": "password"}) '
-                'and analyze the result. If the submission is successful or the page changes unexpectedly, it could be vulnerable.'
+                'You are a comprehensive penetration tester. Test for SQL injection using the Submit Form Tool, '
+                'test for XSS using the Test for XSS Tool, perform IDOR testing with the IDOR Test Tool, '
+                'and check for security misconfigurations using the Security Configuration Checker. '
+                'Analyze the results from all tests and report any confirmed vulnerabilities.'
             ),
-            # --- MODIFICATION START: Give the tester only the tools it needs ---
-            tools=[self.get_form_fields_tool, self.submit_form_tool],
-            # --- MODIFICATION END ---
+            # Add all testing tools to the agent's toolbox
+            tools=[self.get_form_fields_tool, self.submit_form_tool, self.xss_test_tool, self.idor_test_tool, self.security_config_tool],
             llm=self.llm,
             verbose=True,
             allow_delegation=False

@@ -32,20 +32,27 @@ class AutopatchCrew():
 
         test_task = Task(
             description=(
-                f"For EACH form identified in the previous task, perform a security test for SQL injection. "
-                f"First, use the Get Form Fields Tool to understand the inputs. "
-                f"Then, use the Submit Form Tool with a malicious payload like `{{\"username\": \"' OR 1=1 --\", \"password\": \"test\"}}`. "
-                f"Analyze the results from all tests."
+                f"For EACH form identified in the previous task, perform comprehensive security tests. "
+                f"1. Test for SQL injection using the Submit Form Tool with a payload like `{{\"username\": \"' OR 1=1 --\"}}`. "
+                f"2. Test for XSS in text fields using the Test for XSS Tool. "
+                f"3. If login forms are found, test for IDOR vulnerabilities using the IDOR Test Tool with different user accounts. "
+                f"4. Check for security misconfigurations using the Security Configuration Checker on all discovered URLs. "
+                f"Compile a single report detailing the results of ALL tests including any IDOR or configuration issues found."
             ),
-            expected_output="A comprehensive report listing every form tested across the site, the payloads used, and a conclusion on whether vulnerabilities were found.",
+            expected_output="A comprehensive report listing every form tested, the payloads used for SQLi and XSS, IDOR test results, security configuration findings, and a conclusion on all vulnerabilities found.",
             agent=tester,
             context=[recon_task]
         )
-        # --- MODIFICATION END ---
+
+        
 
         fix_task = Task(
-            description=f"Analyze the final vulnerability report. For each confirmed vulnerability, provide a code fix.",
-            expected_output="A list of suggested code fixes or best practices based on the testing results.",
+            description=(
+                "Based on the vulnerability report from the previous task, provide a concise list of code fixes. "
+                "For each confirmed vulnerability, provide an actionable code snippet showing the fix. "
+                "Do NOT repeat the analysis or description of the vulnerability itself. Focus only on the solution."
+            ),
+            expected_output="A list of suggested code fixes with Python code snippets for each vulnerability.",
             agent=fixer,
             context=[test_task]
         )
