@@ -6,7 +6,7 @@
     <style>
         @font-face {
             font-family: 'VCR OSD Mono';
-            src: url('VCR_OSD_MONO_1.001.ttf') format('truetype');
+            src: url('/static/VCR_OSD_MONO_1.001.ttf') format('truetype');
             font-weight: normal;
             font-style: normal;
         }
@@ -40,8 +40,8 @@
         }
         
         .logo {
-            font-size: 2.5rem;
-            font-weight: 700;
+            font-size: 2.8rem;
+            font-weight: 400;
             background: linear-gradient(135deg, #ffffff 0%, #666666 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -129,6 +129,7 @@
             border-radius: 12px;
             overflow: hidden;
             transition: all 0.3s ease;
+            resize: both;
             min-width: 300px;
             min-height: 200px;
             position: relative;
@@ -138,32 +139,33 @@
             border-color: #333333;
         }
         
-        .resize-handle {
+        .terminal-card::after {
+            content: '';
             position: absolute;
-            background: #333;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        
-        .resize-handle.se {
             bottom: 0;
             right: 0;
             width: 12px;
             height: 12px;
-            cursor: se-resize;
             background: linear-gradient(-45deg, transparent 0%, transparent 30%, #333 30%, #333 40%, transparent 40%, transparent 70%, #333 70%, #333 100%);
+            cursor: se-resize;
+            opacity: 0;
+            transition: opacity 0.2s ease;
         }
         
-        .resize-handle.sw {
+        .left-resize-handle {
+            position: absolute;
             bottom: 0;
             left: 0;
             width: 12px;
             height: 12px;
-            cursor: sw-resize;
-            background: linear-gradient(45deg, transparent 0%, transparent 30%, #333 30%, #333 40%, transparent 40%, transparent 70%, #333 70%, #333 100%);
+            background: linear-gradient(-45deg, transparent 0%, transparent 30%, #333 30%, #333 40%, transparent 40%, transparent 70%, #333 70%, #333 100%);
+            cursor: se-resize;
+            opacity: 0;
+            transition: opacity 0.2s ease;
         }
         
-        .terminal-card:hover .resize-handle {
+        .terminal-card:hover::after,
+        .terminal-card:hover .left-resize-handle {
             opacity: 1;
         }
         
@@ -177,9 +179,10 @@
         }
         
         .terminal-title {
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: 1rem;
+            font-weight: 400;
             color: #ffffff;
+            text-transform: uppercase;
         }
         
         .terminal-icon {
@@ -192,7 +195,7 @@
             height: calc(100% - 60px);
             overflow-y: auto;
             font-family: 'VCR OSD Mono', monospace;
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             line-height: 1.3;
             white-space: pre-wrap;
             color: #e0e0e0;
@@ -278,8 +281,7 @@
                     <div class="status-indicator" id="crawler-status"></div>
                 </div>
                 <pre id="crawler-log" class="terminal-content">Waiting for scan...</pre>
-                <div class="resize-handle se"></div>
-                <div class="resize-handle sw"></div>
+                <div class="left-resize-handle"></div>
             </div>
             
             <div class="terminal-card system-terminal">
@@ -289,8 +291,7 @@
                     <div class="status-indicator" id="general-status"></div>
                 </div>
                 <pre id="general-log" class="terminal-content">Waiting for scan...</pre>
-                <div class="resize-handle se"></div>
-                <div class="resize-handle sw"></div>
+                <div class="left-resize-handle"></div>
             </div>
             
             <div class="terminal-card agent-terminal">
@@ -300,8 +301,7 @@
                     <div class="status-indicator" id="scout-status"></div>
                 </div>
                 <pre id="scout-log" class="terminal-content">Waiting for scan...</pre>
-                <div class="resize-handle se"></div>
-                <div class="resize-handle sw"></div>
+                <div class="left-resize-handle"></div>
             </div>
             
             <div class="terminal-card agent-terminal">
@@ -311,8 +311,7 @@
                     <div class="status-indicator" id="tester-status"></div>
                 </div>
                 <pre id="tester-log" class="terminal-content">Waiting for scan...</pre>
-                <div class="resize-handle se"></div>
-                <div class="resize-handle sw"></div>
+                <div class="left-resize-handle"></div>
             </div>
             
             <div class="terminal-card agent-terminal">
@@ -322,8 +321,7 @@
                     <div class="status-indicator" id="fixer-status"></div>
                 </div>
                 <pre id="fixer-log" class="terminal-content">Waiting for scan...</pre>
-                <div class="resize-handle se"></div>
-                <div class="resize-handle sw"></div>
+                <div class="left-resize-handle"></div>
             </div>
         </div>
 
@@ -410,69 +408,61 @@
 
         // Handle terminal resizing
         function setupTerminalResize() {
-            const cards = document.querySelectorAll('.terminal-card');
-            
-            cards.forEach(card => {
-                const seHandle = card.querySelector('.resize-handle.se');
-                const swHandle = card.querySelector('.resize-handle.sw');
-                
-                let isResizing = false;
-                let startX, startY, startWidth, startHeight, startLeft;
-                
-                function startResize(e, handle) {
-                    isResizing = true;
-                    startX = e.clientX;
-                    startY = e.clientY;
-                    startWidth = parseInt(document.defaultView.getComputedStyle(card).width, 10);
-                    startHeight = parseInt(document.defaultView.getComputedStyle(card).height, 10);
-                    startLeft = parseInt(document.defaultView.getComputedStyle(card).left, 10);
+            Object.values(terminals).forEach(term => {
+                const card = term.el.closest('.terminal-card');
+                if (card) {
+                    // Add resize observer to adjust content height
+                    const resizeObserver = new ResizeObserver(entries => {
+                        for (let entry of entries) {
+                            const content = entry.target.querySelector('.terminal-content');
+                            if (content) {
+                                const headerHeight = entry.target.querySelector('.terminal-header').offsetHeight;
+                                content.style.height = `calc(100% - ${headerHeight}px)`;
+                            }
+                        }
+                    });
+                    resizeObserver.observe(card);
                     
-                    document.addEventListener('mousemove', doResize);
-                    document.addEventListener('mouseup', stopResize);
-                    e.preventDefault();
-                }
-                
-                function doResize(e) {
-                    if (!isResizing) return;
-                    
-                    const deltaX = e.clientX - startX;
-                    const deltaY = e.clientY - startY;
-                    
-                    if (seHandle && e.target === seHandle) {
-                        // Southeast resize (bottom-right)
-                        const newWidth = Math.max(300, startWidth + deltaX);
-                        const newHeight = Math.max(200, startHeight + deltaY);
-                        card.style.width = newWidth + 'px';
-                        card.style.height = newHeight + 'px';
-                    } else if (swHandle && e.target === swHandle) {
-                        // Southwest resize (bottom-left)
-                        const newWidth = Math.max(300, startWidth - deltaX);
-                        const newHeight = Math.max(200, startHeight + deltaY);
-                        const newLeft = startLeft + deltaX;
-                        card.style.width = newWidth + 'px';
-                        card.style.height = newHeight + 'px';
-                        card.style.left = newLeft + 'px';
+                    // Handle left resize handle
+                    const leftHandle = card.querySelector('.left-resize-handle');
+                    if (leftHandle) {
+                        let isResizing = false;
+                        let startX, startY, startWidth, startHeight, startLeft;
+                        
+                        leftHandle.addEventListener('mousedown', (e) => {
+                            isResizing = true;
+                            startX = e.clientX;
+                            startY = e.clientY;
+                            startWidth = parseInt(getComputedStyle(card).width, 10);
+                            startHeight = parseInt(getComputedStyle(card).height, 10);
+                            startLeft = parseInt(getComputedStyle(card).left, 10);
+                            
+                            document.addEventListener('mousemove', doResize);
+                            document.addEventListener('mouseup', stopResize);
+                            e.preventDefault();
+                        });
+                        
+                        function doResize(e) {
+                            if (!isResizing) return;
+                            
+                            const deltaX = e.clientX - startX;
+                            const deltaY = e.clientY - startY;
+                            
+                            const newWidth = Math.max(300, startWidth - deltaX);
+                            const newHeight = Math.max(200, startHeight + deltaY);
+                            const newLeft = startLeft + deltaX;
+                            
+                            card.style.width = newWidth + 'px';
+                            card.style.height = newHeight + 'px';
+                            card.style.left = newLeft + 'px';
+                        }
+                        
+                        function stopResize() {
+                            isResizing = false;
+                            document.removeEventListener('mousemove', doResize);
+                            document.removeEventListener('mouseup', stopResize);
+                        }
                     }
-                    
-                    // Adjust content height
-                    const content = card.querySelector('.terminal-content');
-                    if (content) {
-                        const headerHeight = card.querySelector('.terminal-header').offsetHeight;
-                        content.style.height = `calc(100% - ${headerHeight}px)`;
-                    }
-                }
-                
-                function stopResize() {
-                    isResizing = false;
-                    document.removeEventListener('mousemove', doResize);
-                    document.removeEventListener('mouseup', stopResize);
-                }
-                
-                if (seHandle) {
-                    seHandle.addEventListener('mousedown', (e) => startResize(e, seHandle));
-                }
-                if (swHandle) {
-                    swHandle.addEventListener('mousedown', (e) => startResize(e, swHandle));
                 }
             });
         }

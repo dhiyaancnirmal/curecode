@@ -1,3 +1,40 @@
+# Virtual environment
 venv/
+env/
+ENV/
+
+# Python cache files
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment variables
 .env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Font files (if you want to keep them private)
+*.ttf
+*.otf
+*.woff
+*.woff2
