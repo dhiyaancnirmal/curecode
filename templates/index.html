@@ -668,13 +668,13 @@
                     }, 2000);
                 }
                 
-                // Special handling for system terminal - turn off when fixer agent finishes
+                // Special handling for system terminal - turn off when fixer agent's light turns off
                 if (agentKey === 'fixer') {
                     setTimeout(() => {
                         if (terminals.general.status) {
                             terminals.general.status.className = 'status-indicator off';
                         }
-                    }, 2000);
+                    }, 4000); // Wait 4 seconds total (2 seconds for fixer + 2 seconds for system)
                 }
             }
             
