@@ -1,8 +1,6 @@
-<img width="500" height="500" alt="CURE CODE" src="https://github.com/user-attachments/assets/5b3ad836-0c0c-4b09-9b43-8d9a41b0bcba" />
-<br>
-
 [![YouTube](https://github.com/user-attachments/assets/5b3ad836-0c0c-4b09-9b43-8d9a41b0bcba)](https://vimeo.com/1120598811?share=copy&fl=sv&fe=ci)
 
+Watch a demo here ^
 
 <br>
 
