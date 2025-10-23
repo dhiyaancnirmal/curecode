@@ -1,6 +1,8 @@
 <img width="500" height="500" alt="CURE CODE" src="https://github.com/user-attachments/assets/5b3ad836-0c0c-4b09-9b43-8d9a41b0bcba" />
 <br>
-[![Watch the video](path/to/your/video-thumb.png)](https://vimeo.com/1120598811?share=copy&fl=sv&fe=ci)
+
+[![Watch the video]](https://vimeo.com/1120598811?share=copy&fl=sv&fe=ci)
+
 <br>
 
 # CudeCode is An autonomous AI agent security crew that scans and identifies web vulnerabilities and provides actionable code fixes. 
