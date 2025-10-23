@@ -2,8 +2,6 @@
 
 Watch a demo here ^
 
-<br>
-
 # CudeCode is An autonomous AI agent security crew that scans and identifies web vulnerabilities and provides actionable code fixes. 
 
 
